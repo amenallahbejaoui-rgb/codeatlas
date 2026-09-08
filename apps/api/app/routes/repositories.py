@@ -1,7 +1,17 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from urllib.parse import urlparse
-from app.services.github import get_repository, get_repository_tree
+from app.services.github import (
+    get_repository,
+    get_repository_tree,
+    get_important_files,
+    get_file_content,
+)
+from app.analyzers.technology import (
+    detect_technologies,
+    detect_package_technologies,
+)
+from app.analyzers.technology import detect_technologies
 
 
 router = APIRouter(prefix="/api/repositories", tags=["repositories"])
@@ -40,6 +50,23 @@ async def analyze_repository(request: RepositoryRequest):
         repository,
         default_branch,
         )
+        important_files = get_important_files(
+        tree_data.get("tree", []))
+        technologies = detect_technologies(important_files)
+        if "package.json" in important_files:
+            package_content = await get_file_content(
+                owner,
+                repository,
+                "package.json",
+            )
+        
+            package_technologies = detect_package_technologies(
+                package_content
+            )
+        
+            technologies = sorted(
+                set(technologies + package_technologies)
+            )
     except Exception:
         raise HTTPException(
             status_code=404,
@@ -53,5 +80,6 @@ async def analyze_repository(request: RepositoryRequest):
     "stars": github_data.get("stargazers_count"),
     "language": github_data.get("language"),
     "default_branch": default_branch,
-    "tree": tree_data.get("tree", []),
+    "important_files": important_files,
+    "technologies": technologies,
 }
