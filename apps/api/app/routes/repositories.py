@@ -7,10 +7,16 @@ from app.services.github import (
     get_important_files,
     get_file_content,
 )
+from app.analyzers.architecture import detect_architecture
 from app.analyzers.technology import (
     detect_technologies,
     detect_package_technologies,
 )
+from app.analyzers.technology import (
+    detect_technologies,
+    detect_package_technologies,
+)
+
 from app.analyzers.technology import detect_technologies
 
 
@@ -67,6 +73,10 @@ async def analyze_repository(request: RepositoryRequest):
             technologies = sorted(
                 set(technologies + package_technologies)
             )
+            architecture = detect_architecture(
+            technologies,
+            important_files,
+)
     except Exception:
         raise HTTPException(
             status_code=404,
@@ -82,4 +92,5 @@ async def analyze_repository(request: RepositoryRequest):
     "default_branch": default_branch,
     "important_files": important_files,
     "technologies": technologies,
+    "architecture": architecture,
 }
